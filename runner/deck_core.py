@@ -14,31 +14,51 @@ OUT = os.path.join(BASE, "output")
 PHOTOS = os.path.join(BASE, "photos")
 FX = os.environ.get("XHS_FONTS", os.path.join(BASE, "fonts"))
 
+MAC_FONT_DIRS = [
+    "/System/Library/Fonts",
+    "/System/Library/Fonts/Supplemental",
+    "/Library/Fonts",
+    os.path.expanduser("~/Library/Fonts"),
+]
+
+
+def _mac(name):
+    """在 macOS 字体目录里找同名文件（找不到返回 None）"""
+    for d in MAC_FONT_DIRS:
+        f = os.path.join(d, name)
+        if os.path.exists(f):
+            return f
+    return None
+
+
 def _font(name, *cands):
     for c in cands:
-        if os.path.exists(c):
+        if c and os.path.exists(c):
             return c
     return cands[-1]
+
 
 FONT = {
     "Smiley": _font("SmileySans", os.path.join(FX, "SmileySans-Oblique.ttf")),
     "SongH": _font("SongH", os.path.join(FX, "SourceHanSerifSC-Heavy.otf"),
+                   os.path.join(FX, "SourceHanSerifSC-Heavy.otf"), _mac("Songti.ttc"),
                    r"C:\Windows\Fonts\Source Han Serif SC Heavy (TrueType).ttf"),
     "SongV": _font("SongV", os.path.join(FX, "NotoSerifSC-VF.ttf"),
-                   r"C:\Windows\Fonts\NotoSerifSC-VF.ttf"),
+                   _mac("Songti.ttc"), r"C:\Windows\Fonts\NotoSerifSC-VF.ttf"),
     "HOSB": _font("HOSB", os.path.join(FX, "HarmonyOS_Sans_SC_Bold.ttf"),
-                  r"C:\Windows\Fonts\HarmonyOS_Sans_SC_Bold.ttf"),
+                  _mac("PingFang.ttc"), r"C:\Windows\Fonts\HarmonyOS_Sans_SC_Bold.ttf"),
     "HOSM": _font("HOSM", os.path.join(FX, "HarmonyOS_Sans_SC_Medium.ttf"),
-                  r"C:\Windows\Fonts\HarmonyOS_Sans_SC_Medium.ttf"),
+                  _mac("PingFang.ttc"), r"C:\Windows\Fonts\HarmonyOS_Sans_SC_Medium.ttf"),
     "HOSR": _font("HOSR", os.path.join(FX, "HarmonyOS_Sans_SC_Regular.ttf"),
-                  r"C:\Windows\Fonts\HarmonyOS_Sans_SC_Regular.ttf"),
+                  _mac("PingFang.ttc"), r"C:\Windows\Fonts\HarmonyOS_Sans_SC_Regular.ttf"),
 }
 
 def _facelist():
     out = []
     for k, v in FONT.items():
-        out.append("@font-face{font-family:'%s';src:url('file:///%s');}" % (k, v.replace("\\", "/")))
+        out.append("@font-face{font-family:'%s';src:url('file:///%s');}" % (k, v.replace(chr(92), "/")))
     return "".join(out)
+
 
 FACES = _facelist()
 def P(name):
@@ -97,7 +117,7 @@ SKIN = {
 }
 
 COMMON = "*{margin:0;padding:0;box-sizing:border-box}body{width:1080px;height:1440px;overflow:hidden}" \
-         ".s{position:relative;width:1080px;height:1440px;overflow:hidden;font-family:HOSM,'Microsoft YaHei',sans-serif}"
+         ".s{position:relative;width:1080px;height:1440px;overflow:hidden;font-family:HOSM,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}"
 
 
 # ============ 封面 ============

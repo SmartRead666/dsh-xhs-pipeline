@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 一键初始化（新同事第一次用，跑这一次就行）
+支持 Windows / macOS / Linux
 - 建工作目录：photos / fonts / profiles / output / _work / content
 - 检查 playwright，缺了自动 pip 安装
 - 浏览器探测：Chrome → Edge → Playwright 自带 Chromium（**不需要非装 Chrome**）
@@ -51,11 +52,21 @@ def ensure_playwright():
         return True
     except ImportError:
         say("安装 playwright（约 30 秒）...")
-        r = subprocess.run([sys.executable, "-m", "pip", "install", "playwright"],
-                           capture_output=True, text=True)
-        ok = r.returncode == 0
-        say("playwright 安装" + ("成功" if ok else "失败：\n" + (r.stderr or "")[-500:]))
-        return ok
+        cmds = [
+            [sys.executable, "-m", "pip", "install", "playwright"],
+            [sys.executable, "-m", "pip", "install", "--user", "playwright"],
+            [sys.executable, "-m", "pip", "install", "--user", "--break-system-packages", "playwright"],
+        ]
+        err = ""
+        for cmd in cmds:
+            r = subprocess.run(cmd, capture_output=True, text=True)
+            if r.returncode == 0:
+                say("playwright 安装成功")
+                return True
+            err = (r.stderr or "")[-400:]
+        say("playwright 安装失败：\n" + err)
+        say("   macOS 上可试：brew install python && python3 -m pip install playwright")
+        return False
 
 
 def find_browser():

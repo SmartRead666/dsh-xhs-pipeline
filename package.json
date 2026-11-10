@@ -1,6 +1,6 @@
 {
   "name": "dsh-xhs-pipeline",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "小红书多账号内容流水线插件：12 套 3:4 图文模板、定时发布、评论私信监测，附侧栏可开的小面板。",
   "type": "module",
   "main": "lib/index.js",

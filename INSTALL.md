@@ -107,6 +107,19 @@
 脚本不依赖你**平时上网用什么浏览器**，它只借用系统里的 Chromium 内核；
 登录态存在自己的工作目录里，不会动你的日常浏览器数据。
 
+
+## macOS 兼容说明
+
+插件在 Mac 上同样可用，有三点差异要知道：
+
+| 项目 | Mac 上的表现 |
+|---|---|
+| **Python** | 优先用 DSH 自带 Python；找不到时回退 python3。若提示缺依赖，执行 rew install python && python3 -m pip install playwright |
+| **浏览器** | 用 Chrome 或 Edge for Mac；都没有则初始化自动装 Playwright 自带 Chromium |
+| **字体** | 得意黑自动下载；**思源宋体 / HarmonyOS 字体不会自动装**。把字体文件放进 ~/xhs-workspace/fonts/ 就是满分效果；不放会自动回退到苹方 / 宋体，版式略变但仍可出图 |
+
+工作目录在 Mac 上是 ~/xhs-workspace（即 /Users/你的名字/xhs-workspace）。
+
 ## 账号安全
 
 1. 一个账号一个浏览器目录（`profiles/` 里的目录名和 slug 一一对应），**不要共用**。
