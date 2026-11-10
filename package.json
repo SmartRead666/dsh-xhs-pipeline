@@ -1,0 +1,44 @@
+{
+  "name": "dsh-xhs-pipeline",
+  "version": "0.3.2",
+  "description": "小红书多账号内容流水线插件：12 套 3:4 图文模板、定时发布、评论私信监测，附侧栏可开的小面板。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json",
+    "./client": "./lib/client.js"
+  },
+  "files": [
+    "lib",
+    "skills",
+    "public",
+    "runner",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "dsh",
+    "xiaohongshu",
+    "小红书",
+    "skill"
+  ],
+  "author": "Peter",
+  "engines": {
+    "node": ">=22.0.0",
+    "dsh": ">=0.2.1-rc.2 <0.3.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": []
+    }
+  },
+  "license": "MIT"
+}

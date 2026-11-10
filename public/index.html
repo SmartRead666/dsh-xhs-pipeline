@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>小红书内容助手</title>
+<style>
+  :root {
+    --bg:#0f1116; --card:#171a21; --line:#252a34; --ink:#e8ecf3; --dim:#8b94a7;
+    --acc:#ff2d55; --ok:#3ac07a; --warn:#ffc53d;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.65 "Microsoft YaHei",system-ui,sans-serif; }
+  header { padding:16px 22px 12px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  header h1 { font-size:17px; margin:0; }
+  header .sub { color:var(--dim); font-size:12px; }
+  header .spacer { flex:1; }
+  main { padding:16px 22px 48px; display:grid; gap:14px; max-width:1080px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; }
+  .card h2 { font-size:14px; margin:0 0 4px; display:flex; align-items:center; gap:8px; }
+  .card .hint { color:var(--dim); font-size:12px; margin:0 0 14px; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  select,input { background:#0d1015; color:var(--ink); border:1px solid var(--line); border-radius:7px; padding:8px 10px; font:inherit; }
+  select { min-width:320px; }
+  button { background:var(--acc); color:#fff; border:0; border-radius:7px; padding:8px 16px; font:inherit; cursor:pointer; }
+  button.ghost { background:#232833; color:var(--ink); }
+  button.mini { background:#232833; color:var(--ink); padding:4px 10px; font-size:12px; border-radius:6px; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { text-align:left; padding:8px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  th { color:var(--dim); font-weight:500; }
+  .badge { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; background:#232833; color:var(--dim); }
+  .badge.sched { background:#12351f; color:var(--ok); }
+  .badge.todo { background:#332c12; color:var(--warn); }
+  .badge.pub { background:#232b3a; color:#9fb0c9; }
+  .badge.rev { background:#2a2416; color:#e6c07b; }
+  .badge.rej { background:#3a1d22; color:#ff8a9d; }
+  .step { color:var(--acc); font-weight:600; font-size:12px; letter-spacing:1px; }
+  .tip { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%;
+         background:#2a3040; color:var(--dim); font-size:11px; cursor:help; position:relative; }
+  .tip:hover { background:#39415a; color:#fff; }
+  .tip::after { content:attr(data-tip); position:absolute; left:50%; top:130%; transform:translateX(-50%);
+                width:260px; background:#05070c; color:#dfe6f2; border:1px solid #333b4d; border-radius:8px;
+                padding:9px 11px; font-size:12px; line-height:1.6; white-space:normal; text-align:left;
+                opacity:0; pointer-events:none; transition:opacity .12s; z-index:20; box-shadow:0 6px 20px rgba(0,0,0,.5); }
+  .tip:hover::after { opacity:1; }
+  .toolbar-note { color:var(--dim); font-size:12px; margin-top:10px; }
+  details { margin-top:6px; }
+  summary { cursor:pointer; color:var(--dim); font-size:12px; }
+  pre { background:#0b0d11; border:1px solid var(--line); border-radius:8px; padding:12px; margin-top:10px;
+        max-height:320px; overflow:auto; font-size:12px; white-space:pre-wrap; color:#9fb0c9; }
+  #toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:#0b0e14; border:1px solid #333b4d;
+           color:#dfe6f2; padding:10px 16px; border-radius:10px; font-size:13px; display:none; z-index:50; max-width:80%; }
+  #qrWrap { display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+  #qrWrap img { width:220px; background:#fff; border-radius:10px; }
+  .ok { color:var(--ok); } .err { color:#ff6b81; }
+</style>
+</head>
+<body>
+<header>
+  <h1>小红书内容助手</h1>
+  <span class="sub">把写好的内容做成图文，按你定的时间自动发布，并帮你盯着评论和私信。</span>
+  <span class="spacer"></span>
+  <select id="account" style="min-width:200px"></select>
+</header>
+
+<main>
+  <!-- 0. 登录 -->
+  <div class="card">
+    <h2>账号登录
+      <span class="tip" data-tip="什么时候需要登录：① 换了一台电脑；② 面板提示登录失效；③ 想查看评论和私信。用手机小红书 App 扫一扫即可，登录一次长期有效。">?</span>
+    </h2>
+    <p class="hint">第一次使用、或系统提示登录失效时，点下面的按钮，用手机扫一扫。</p>
+    <div class="row">
+      <button class="ghost" id="btnLoginCreator">登录（用来发布笔记）</button>
+      <button class="ghost" id="btnLoginMain">登录（用来看评论和私信）</button>
+    </div>
+    <div id="qrWrap">
+      <div class="row" style="align-items:flex-start;gap:16px">
+        <img id="qrImg" alt="二维码" />
+        <div>
+          <div id="qrState" style="color:var(--warn)">正在准备二维码…</div>
+          <div class="toolbar-note">用登录该账号的小红书 App 扫码。二维码会自动刷新。</div>
+          <button class="ghost" style="margin-top:12px" id="qrClose">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 安排发布 -->
+  <div class="card">
+    <h2>安排发布
+      <span class="tip" data-tip="选中一条已经生成好的图文，填好时间，到点小红书会自动发出。发布前可在创作中心取消或改期。">?</span>
+    </h2>
+    <p class="hint">选一条内容，定好时间，系统到点自动发出。已经排过期的不需要再操作。</p>
+    <div class="row" style="margin-bottom:10px">
+      <button class="ghost mini" id="btnSync">刷新状态
+        <span class="tip" data-tip="去小红书后台核对每条笔记的真实状态（已发布/审核中/定时中/被驳回），并把结果同步到这里。打开面板时也会自动核对一次。">?</span>
+      </button>
+      <span class="hint" style="margin:0" id="syncNote">状态会自动核对</span>
+    </div>
+    <table>
+      <thead><tr><th style="width:52px">选择</th><th>标题</th><th style="width:110px">对应日期</th><th style="width:170px">状态</th></tr></thead>
+      <tbody id="dayRows"><tr><td colspan="4" style="color:var(--dim)">还没有生成好的图文，请先在上面「第一步」生成。</td></tr></tbody>
+    </table>
+    <div class="row" style="margin-top:14px">
+      <label class="hint" style="margin:0">发布时间</label>
+      <input type="datetime-local" id="when" />
+      <button id="btnPublish">预约发布
+        <span class="tip" data-tip="到点自动发出。注意：平台要求时间在未来 1 小时到 14 天之间；发出后可在小红书创作中心修改或取消。">?</span>
+      </button>
+      <button class="ghost" id="btnDraft">先存草稿
+        <span class="tip" data-tip="只保存到小红书草稿箱，不会发出去。适合你想先审核一遍的情况。">?</span>
+      </button>
+      <button id="btnChangeTime" style="display:none">改时间
+        <span class="tip" data-tip="把这条已排期笔记的时间改成上面选择的「发布时间」，改完会重新进入审核。">?</span>
+      </button>
+      <button class="ghost" id="btnPublishNow" style="display:none">立即发布
+        <span class="tip" data-tip="跳过预约，马上发出去。会重新进入平台审核，通常几分钟。">?</span>
+      </button>
+    </div>
+    <p class="toolbar-note" id="publishNote">只有「待安排」的内容可以发布。</p>
+  </div>
+
+  <!-- 3. 互动 -->
+  <div class="card">
+    <h2>互动提醒
+      <span class="tip" data-tip="检查有没有新的评论、@、私信、点赞和关注。系统每 2 小时会自动检查一次，你也可以在这里手动点一下。">?</span>
+    </h2>
+    <div class="row">
+      <button class="ghost" id="btnMonitor">立即检查新评论/私信</button>
+      <span class="hint" style="margin:0" id="monitorNote">还没检查过</span>
+    </div>
+  </div>
+
+  <!-- 4. 技术详情 -->
+  <div class="card">
+    <details>
+      <summary>技术详情（一般不用看）</summary>
+      <div class="row" style="margin-top:10px">
+        <button class="ghost mini" id="btnUpdate">检查插件更新</button>
+        <span class="hint" style="margin:0" id="updateNote"></span>
+      </div>
+      <pre id="log">就绪。</pre>
+    </details>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { accounts: [], days: [] };
+let selectedDay = null;
+let qrTimer = null;
+
+function toast(msg, ms = 3200) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(window.__tt);
+  window.__tt = setTimeout(() => (t.style.display = 'none'), ms);
+}
+function log(msg) { $('log').textContent = msg || '就绪。'; }
+function setLog(v) { $('log').textContent = v; }
+
+async function api(path, body) {
+  const r = await fetch('/xhs-pipeline' + path, body ? {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body)
+  } : undefined);
+  return r.json();
+}
+
+function defaultWhen() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const p = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T17:30';
+}
+
+async function boot() {
+  const s = await api('/api/state');
+  if (!s.ok) {
+    toast('配置没找到：' + (s.hint || s.error || ''));
+    return;
+  }
+  state.accounts = s.accounts || [];
+  state.days = s.days || [];
+
+  const accSel = $('account');
+  if (accSel.options.length === 0) {
+    accSel.innerHTML = state.accounts.map(a => `<option value="${a.slug}">${a.name}</option>`).join('');
+    accSel.onchange = renderDays;
+  }
+  if (!$('when').value) $('when').value = defaultWhen();
+  renderDays();
+  renderUpdate(s.update);
+  if (!__synced) { __synced = true; setTimeout(() => syncStatus(false), 400); }
+}
+
+function renderDays() {
+  const acc = $('account').value;
+  const rows = state.days.filter(d => d.account === acc);
+  const tb = $('dayRows');
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="4" style="color:var(--dim)">还没有生成好的图文，请先在上面「第一步」生成。</td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(d => {
+    let badge;
+    if (d.status === 'published') badge = `<span class="badge pub">已发布 ${d.scheduledAt || ''}</span>`;
+    else if (d.status === 'reviewing') badge = `<span class="badge rev">审核中</span>`;
+    else if (d.status === 'rejected') badge = `<span class="badge rej">被驳回</span>`;
+    else if (d.status === 'scheduled' && d.scheduledAt) badge = `<span class="badge sched">已排期 ${d.scheduledAt}</span>`;
+    else badge = `<span class="badge todo">待安排</span>`;
+    return `<tr>
+      <td><input type="radio" name="pick" value="${d.dir}" onchange="pickRow(this, '${d.status || ''}', '${(d.title || '').replace(/'/g, '')}')"></td>
+      <td>${d.title || d.dir}</td>
+      <td>${d.date || ''}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+let pickedStatus = '';
+let pickedTitle = '';
+function setButtons(status) {
+  const PUB = { scheduled: 'change', rejected: 'resubmit', published: 'none' }[status] || 'new';
+  document.getElementById('btnPublish').style.display = PUB === 'new' ? '' : 'none';
+  document.getElementById('btnDraft').style.display = PUB === 'new' ? '' : 'none';
+  document.getElementById('btnChangeTime').style.display = (PUB === 'change' || PUB === 'resubmit') ? '' : 'none';
+  document.getElementById('btnPublishNow').style.display = status === 'scheduled' ? '' : 'none';
+  document.getElementById('btnChangeTime').textContent = PUB === 'resubmit' ? '重新提交审核' : '改时间';
+  const note = document.getElementById('publishNote');
+  if (status === 'scheduled') note.textContent = '这条已经排期了。改时间：选好下方时间后点「改时间」。想马上发：点「立即发布」。';
+  else if (status === 'published') note.textContent = '这条已经发布了，不需要再操作。';
+  else if (status === 'rejected') note.textContent = '这条被平台驳回了。核对我们给的原因，改好后可以点「重新提交审核」。';
+  else note.textContent = '只有「待安排」的内容可以发布。';
+}
+window.pickRow = (el, status, title) => {
+  selectedDay = el.value; pickedStatus = status; pickedTitle = title;
+  setButtons(status);
+};
+
+async function runReschedule(now) {
+  if (!pickedTitle) return toast('请先选中一条');
+  const raw = $('when').value;
+  if (!now && !raw) return toast('请先选择新的发布时间');
+  const when = raw ? raw.replace('T', ' ') : '';
+  setLog(now ? '正在立即发布…' : '正在修改时间…');
+  try {
+    const r = await api('/api/reschedule', { account: $('account').value, title: pickedTitle, time: when, now });
+    setLog(r.output || '');
+    if (r.ok) { toast(now ? '已立即发布' : '时间已修改'); await boot(); }
+    else toast('操作失败，展开「技术详情」看原因');
+  } catch (e) { toast('操作失败：' + e.message); }
+}
+
+let __synced = false;
+let __syncing = false;
+async function syncStatus(manual) {
+  if (__syncing) return;
+  __syncing = true;
+  const note = document.getElementById('syncNote');
+  if (note) note.textContent = '正在核对平台状态…';
+  try {
+    let r = await api('/api/sync', { account: $('account').value });
+    if (!r.ok) {
+      if (note) note.textContent = '正在重试核对…';
+      await new Promise((res) => setTimeout(res, 4000));
+      r = await api('/api/sync', { account: $('account').value });
+    }
+    if (note) note.textContent = r.ok ? '已核对' : '核对失败（稍后再点一次）';
+    if (r.ok) await boot();
+    if (manual) toast(r.ok ? '状态已刷新' : '刷新失败，稍后再试');
+  } catch (e) {
+    if (note) note.textContent = '核对失败（稍后再点一次）';
+    if (manual) toast('刷新失败，稍后再试');
+  }
+  __syncing = false;
+}
+
+function renderUpdate(u) {
+  if (!u) return;
+  if (u.available) $('updateNote').textContent = `有新版本 ${u.latest}（当前 ${u.current}）`;
+  else if (!u.error) $('updateNote').textContent = `已是最新 ${u.current}`;
+}
+
+async function runPublish(draft) {
+  if (!selectedDay) return toast('请先选中一条图文');
+  const raw = $('when').value;
+  if (!raw && !draft) return toast('请先选择发布时间');
+  const when = raw ? raw.replace('T', ' ') : '';
+  $('btnPublish').disabled = true; $('btnDraft').disabled = true;
+  setLog(draft ? '正在保存草稿…' : '正在安排发布，遇到扫码验证会弹出二维码…');
+  try {
+    const r = await api('/api/publish', { account: $('account').value, dayDir: selectedDay, time: when, draft });
+    setLog(r.output || '');
+    const okTxt = draft ? '已保存到草稿箱' : '已安排发布，到点会自动发出';
+    if (r.ok) { toast(okTxt); await boot(); }
+    else toast('操作失败，展开「技术详情」看原因');
+  } catch (e) { toast('操作失败：' + e.message); }
+  $('btnPublish').disabled = false; $('btnDraft').disabled = false;
+}
+
+async function runMonitor() {
+  $('btnMonitor').disabled = true;
+  try {
+    const r = await api('/api/monitor', { account: $('account').value });
+    const txt = r.output || '';
+    const m = txt.match(/评论和@:\s*(\d+)[\s\S]*?私信:\s*(\d+)/);
+    $('monitorNote').textContent = m
+      ? `评论/@ ${m[1]} 条，私信 ${m[2]} 条（未读）`
+      : '检查完成';
+    toast('检查完成');
+  } catch (e) { toast('检查失败：' + e.message); }
+  $('btnMonitor').disabled = false;
+}
+
+function startLogin(main) {
+  const account = $('account').value;
+  $('qrWrap').style.display = 'block';
+  $('qrState').textContent = '正在准备二维码…';
+  $('qrImg').removeAttribute('src');
+  api('/api/login-start', { account, main }).then(r => {
+    if (!r.ok) { $('qrState').textContent = '启动失败：' + (r.error || ''); return; }
+    const qs = 'account=' + encodeURIComponent(account) + '&main=' + (main ? 1 : 0);
+    if (qrTimer) clearInterval(qrTimer);
+    qrTimer = setInterval(async () => {
+      try {
+        $('qrImg').src = '/xhs-pipeline/api/login-qr?' + qs + '&t=' + Date.now();
+        const st = await api('/api/login-status?' + qs);
+        if (st.state === 'ok') {
+          $('qrState').textContent = '✅ 登录成功';
+          clearInterval(qrTimer); qrTimer = null;
+          setTimeout(() => { $('qrWrap').style.display = 'none'; boot(); }, 1200);
+        } else if (st.state === 'timeout') {
+          $('qrState').textContent = '二维码已过期，请重新点登录';
+          clearInterval(qrTimer); qrTimer = null;
+        } else if (st.state === 'waiting') {
+          $('qrState').textContent = '等待扫码…';
+        }
+      } catch (e) {}
+    }, 2000);
+  });
+}
+
+$('btnLoginCreator').onclick = () => startLogin(false);
+$('btnLoginMain').onclick = () => startLogin(true);
+$('btnPublish').onclick = () => runPublish(false);
+$('btnDraft').onclick = () => runPublish(true);
+$('btnMonitor').onclick = runMonitor;
+$('btnSync').onclick = () => syncStatus(true);
+$('btnChangeTime').onclick = () => runReschedule(false);
+$('btnPublishNow').onclick = () => runReschedule(true);
+$('qrClose').onclick = () => {
+  $('qrWrap').style.display = 'none';
+  if (qrTimer) { clearInterval(qrTimer); qrTimer = null; }
+};
+$('btnUpdate').onclick = async () => {
+  $('updateNote').textContent = '检查中…';
+  try { const u = await api('/api/update-check'); renderUpdate(u); } catch { $('updateNote').textContent = '检查失败'; }
+};
+$('account').addEventListener('change', renderDays);
+
+boot();
+</script>
+</body>
+</html>

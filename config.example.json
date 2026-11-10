@@ -1,0 +1,14 @@
+{
+  "home": "~/xhs-workspace",
+  "fonts_dir": "~/xhs-workspace/fonts",
+  "default_time": "17:30",
+  "accounts": [
+    {
+      "slug": "me",
+      "name": "我的小红书号",
+      "handle": "我的小红书号",
+      "brand": "我的内容品牌",
+      "default_time": "17:30"
+    }
+  ]
+}

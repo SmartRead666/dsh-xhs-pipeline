@@ -1,0 +1,4 @@
+# 小红书内容流水线：Host 半边（skill 提供方、3 个工具、一个小面板页面）
+- insert:
+    - id: xhs-pipeline
+      name: 'dsh-xhs-pipeline'

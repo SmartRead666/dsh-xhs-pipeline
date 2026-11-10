@@ -1,0 +1,22 @@
+# 本地配置与运行产物（可能含账号信息/登录态）
+config.json
+profiles/
+output/
+content/
+photos/
+_work/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+
+# 系统
+.DS_Store
+Thumbs.db
