@@ -53,6 +53,16 @@ python scripts/render.py --account <slug> --day examples/day01.json
 
 出图前会**自动跑合规自检**（见下文第七章），block 级风险会中止出图；确认无误才加 `XHS_FORCE=1` 强出。
 
+### 2.5 草稿箱会自己长大（重要）
+
+小红书草稿存在**浏览器本地**，脚本每次发布都会自动留一份草稿。发布成功后插件会自动清同名残留；
+如果长期不清理，草稿箱会堆几十篇重复内容。手动收拾：
+
+```
+python scripts/clean_drafts.py --account <slug> --dedupe   # 每个标题只留最新一份
+python scripts/clean_drafts.py --account <slug>            # 只看数量
+```
+
 ### 3. 定时发布
 
 ```

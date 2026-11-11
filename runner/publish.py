@@ -128,12 +128,40 @@ async def run(cfg, acc, folder, when, draft_only, login_only):
         await pg.wait_for_timeout(600)
 
         if draft_only:
+            clicked = False
             try:
-                await pg.get_by_text("暂存离开", exact=True).last.click(force=True, timeout=8000)
-                print("DRAFT_OK")
-            except Exception as e:
-                print("DRAFT_FAIL", e)
-            await pg.wait_for_timeout(2000)
+                await pg.get_by_text("暂存离开", exact=True).last.click(force=True, timeout=5000)
+                clicked = True
+            except Exception:
+                pass
+            if not clicked:
+                # 按钮在 closed shadow 里，用底部栏几何位置点（左 40%，垂直中线）
+                r = await pg.evaluate("""() => {
+                    const el = document.querySelector('xhs-publish-btn');
+                    if (!el) return null;
+                    const b = el.getBoundingClientRect();
+                    return {x: b.x, y: b.y, w: b.width, h: b.height};
+                }""")
+                if r and r.get("w", 0) > 100:
+                    await pg.mouse.click(r["x"] + r["w"] * 0.40, r["y"] + 47)
+                    clicked = True
+                else:
+                    await pg.mouse.click(665, 957)
+                    clicked = True
+            await pg.wait_for_timeout(2500)
+            body = ""
+            try:
+                body = await pg.evaluate("() => document.body.innerText")
+            except Exception:
+                pass
+            ok = ("草稿" in body) or ("保存" in body) or ("publish/publish" in pg.url)
+            print("DRAFT_OK" if ok else "DRAFT_UNKNOWN")
+            if ok:
+                try:
+                    _clean_drafts(cfg, acc, pkg["title"], keep=1)
+                except Exception as e:
+                    print("cleaned_drafts: skip", e, flush=True)
+            await pg.wait_for_timeout(1500)
             await ctx.close()
             return 0
 
@@ -179,9 +207,29 @@ async def run(cfg, acc, folder, when, draft_only, login_only):
             except Exception as e:
                 print("记录排期失败", e, flush=True)
         print("PUBLISH_OK" if ok else "PUBLISH_UNKNOWN")
+        if ok:
+            try:
+                _clean_drafts(cfg, acc, pkg["title"], keep=0)
+            except Exception as e:
+                print("cleaned_drafts: skip", e, flush=True)
         await pg.wait_for_timeout(1500)
         await ctx.close()
         return 0 if ok else 1
+
+
+
+def _clean_drafts(cfg, acc, title, keep=0):
+    """发布成功后清理同名残留草稿（草稿存在浏览器本地，跑多了会堆一堆）"""
+    import subprocess
+    try:
+        r = subprocess.run([sys.executable, os.path.join(HERE, "clean_drafts.py"),
+                            "--account", acc["slug"], "--title", title, "--keep", str(keep)],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           timeout=180, env=os.environ.copy())
+        tail = [ln for ln in (r.stdout or "").split("\n") if ln.startswith(("CLEANED", "NOTHING", "DRY"))]
+        print("cleaned_drafts:", " ".join(tail) or "(no result)", flush=True)
+    except Exception as e:
+        print("cleaned_drafts: 跳过（%s）" % e, flush=True)
 
 
 def main():
