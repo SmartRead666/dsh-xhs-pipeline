@@ -63,6 +63,21 @@ python scripts/clean_drafts.py --account <slug> --dedupe   # 每个标题只留�
 python scripts/clean_drafts.py --account <slug>            # 只看数量
 ```
 
+### 2.8 人工发布模式（推荐，规避「AI 托管发文」判定）
+
+平台会判定「利用 AI 托管进行发文/互动」，且**草稿由自动化上传时同样带特征**。
+最稳的做法：自动化只生产素材，发布 100% 人工。
+
+```
+python scripts/export_packages.py            # 全部导出
+python scripts/export_packages.py --day <目录>  # 单个
+```
+
+输出到 `<home>/待发布/<序号>_<日期>_<标题>/`：
+`1_封面.png … 6_结尾.png` + `标题.txt / 正文.txt / 话题.txt / 置顶评论.txt / 复制这段.txt / 怎么发.txt`
+
+把文件夹传到手机 → 用小红书 App 手动发。
+
 ### 3. 定时发布
 
 ```
